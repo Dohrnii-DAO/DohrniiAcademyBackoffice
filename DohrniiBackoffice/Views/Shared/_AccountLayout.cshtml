@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DohrniiBackoffice</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Sweet Alert -->
+    <link type="text/css" href="~/css/sweetalert2.min.css" rel="stylesheet">
+
+    <!-- Notyf -->
+    <link type="text/css" href="~/css/notyf.min.css" rel="stylesheet">
+
+    <!-- Volt CSS -->
+    <link type="text/css" href="~/css/volt.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/custom.min.css" asp-append-version="true" />
+</head>
+<body>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+       <!-- Core -->
+    <script src="~/js/popper.min.js"></script>
+    @*<script src="~/js/bootstrap.min.js"></script>*@
+
+    <!-- Vendor JS -->
+    <script src="~/js/on-screen.umd.min.js"></script>
+
+    <!-- Slider -->
+    <script src="~/js/nouislider.min.js"></script>
+
+    <!-- Smooth scroll -->
+    <script src="~/js/smooth-scroll.polyfills.min.js"></script>
+
+    <!-- Charts -->
+    <script src="~/js/chartist.min.js"></script>
+    <script src="~/js/chartist-plugin-tooltip.min.js"></script>
+
+    <!-- Datepicker -->
+    <script src="~/js/datepicker.min.js"></script>
+
+    <!-- Sweet Alerts 2 -->
+    <script src=".~/js/sweetalert2.all.min.js"></script>
+
+    <!-- Moment JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
+
+    <!-- Vanilla JS Datepicker -->
+    <script src="~/js/datepicker.min.js"></script>
+
+    <!-- Notyf -->
+    <script src="~/js/notyf.min.js"></script>
+
+    <!-- Simplebar -->
+    <script src="~/js/simplebar.min.js"></script>
+
+    <!-- Github buttons -->
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+    <!-- Volt JS -->
+    <script src="~/js/volt.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
