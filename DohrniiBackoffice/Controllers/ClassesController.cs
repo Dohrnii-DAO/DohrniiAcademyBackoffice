@@ -50,6 +50,11 @@ namespace DohrniiBackoffice.Controllers
             _vQuestionRepository = vQuestionRepository;
         }
 
+        /// <summary>
+        /// Start a class
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("start")]
         [Produces(typeof(StartResponseDTO))]
         public async Task<IActionResult> StartClass([FromBody] StartDTO dto)
@@ -96,6 +101,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Complete a class
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut("complete")]
         [Produces(typeof(CompleteResponseDTO))]
         public async Task<IActionResult> CompleteClass([FromBody] CompleteDTO dto)
@@ -144,6 +154,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Attempt a class question
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("questionattempt")]
         [Produces(typeof(QuestionAttemptRespDTO))]
         public async Task<IActionResult> QuestionAttempt([FromBody] QuestionAttemptDTO dto)
@@ -207,6 +222,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Get class questions with the answer options
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         [HttpGet("{Id:int}/questions")]
         [Produces(typeof(List<ClassQuestionDTO>))]
         public IActionResult GetQuestions(int Id)

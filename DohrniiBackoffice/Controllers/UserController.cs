@@ -23,7 +23,7 @@ namespace DohrniiBackoffice.Controllers
         private readonly IChapterActivityRepository _chapterActivityRepository;
         private readonly IChapterRepository _chapterRepository;
         private readonly IWithdrawActivityRepository _withdrawActivityRepository;
-        IEarningActivityRepository _earningActivityRepository;
+        private readonly IEarningActivityRepository _earningActivityRepository;
 
 
         public UserController(ICategoryRepository categoryRepository, ILessonRepository lessonRepository, ILessonClassRepository 
@@ -44,7 +44,10 @@ namespace DohrniiBackoffice.Controllers
             _earningActivityRepository = earningActivityRepository;
         }
 
-
+        /// <summary>
+        /// Get User status
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("status")]
         [Produces(typeof(UserStausDTO))]
         public IActionResult GetUserStatus()
@@ -126,6 +129,10 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Get user profile
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("profile")]
         [Produces(typeof(UserResp))]
         public IActionResult UpdateProfile()
@@ -136,7 +143,13 @@ namespace DohrniiBackoffice.Controllers
                 var user = GetUser();
                 if (user != null)
                 {
-                    return Ok(_mapper.Map<UserResp>(user));
+                    var userResp = _mapper.Map<UserResp>(user);
+                    var settings = _appSettingsRepository.GetAll().FirstOrDefault();
+                    if (settings != null)
+                    {
+                        userResp.XpPerCryptojelly = settings.XpToJelly;
+                    }
+                    return Ok(userResp);
                 }
                 else
                 {
@@ -149,6 +162,12 @@ namespace DohrniiBackoffice.Controllers
                 return InternalServerError(new ErrorResponse { Details = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Update user profile
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
 
         [HttpPost("profile")]
         [Produces(typeof(UserResp))]
@@ -172,7 +191,14 @@ namespace DohrniiBackoffice.Controllers
                     {
                         user.ProfileImage = $"{GetBasedUrl()}{AuthConstants.DefaultProfile}";
                     }
-                    return Ok(_mapper.Map<UserResp>(user));
+
+                    var userResp = _mapper.Map<UserResp>(user);
+                    var settings = _appSettingsRepository.GetAll().FirstOrDefault();
+                    if (settings != null)
+                    {
+                        userResp.XpPerCryptojelly = settings.XpToJelly;
+                    }
+                    return Ok(userResp);
                 }
                 else
                 {
@@ -186,6 +212,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Converts XP to CryptoJelly
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("convert/xptojelly")]
         [Produces(typeof(UserResp))]
         public async Task<IActionResult> ConvertXPtoJelly([FromBody] ConvertXpDTO dto)

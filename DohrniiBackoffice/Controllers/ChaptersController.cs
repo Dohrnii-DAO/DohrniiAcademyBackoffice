@@ -1,8 +1,12 @@
 ﻿using DohrniiBackoffice.Domain.Abstract;
+using DohrniiBackoffice.Domain.Entities;
+using DohrniiBackoffice.DTO.Request;
 using DohrniiBackoffice.DTO.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 
 namespace DohrniiBackoffice.Controllers
 {
@@ -23,6 +27,8 @@ namespace DohrniiBackoffice.Controllers
         private readonly IvQuestionRepository _vQuestionRepository;
         private readonly IClassQuestionAnswerRepository _classQuestionAnswerRepository;
         private readonly IQuizAttemptRepository _quizAttemptRepository;
+        private readonly IWithdrawActivityRepository _withdrawActivityRepository;
+        private readonly IAppSettingsRepository _appSettingsRepository;
 
 
         public ChaptersController(ICategoryRepository categoryRepository, ILessonRepository lessonRepository, 
@@ -30,7 +36,8 @@ namespace DohrniiBackoffice.Controllers
             ILessonClassActivityRepository lessonClassActivityRepository, IChapterRepository chapterRepository,
             IQuizUnlockActivityRepository quizUnlockActivityRepository, IChapterActivityRepository chapterActivityRepository,
             IEarningActivityRepository earningActivityRepository, IvQuestionRepository vQuestionRepository,
-            IClassQuestionAnswerRepository classQuestionAnswerRepository, IQuizAttemptRepository quizAttemptRepository)
+            IClassQuestionAnswerRepository classQuestionAnswerRepository, IQuizAttemptRepository quizAttemptRepository, 
+            IWithdrawActivityRepository withdrawActivityRepository, IAppSettingsRepository appSettingsRepository)
         {
             _categoryRepository = categoryRepository;
             _lessonRepository = lessonRepository;
@@ -44,9 +51,15 @@ namespace DohrniiBackoffice.Controllers
             _vQuestionRepository = vQuestionRepository;
             _classQuestionAnswerRepository = classQuestionAnswerRepository;
             _quizAttemptRepository = quizAttemptRepository;
+            _withdrawActivityRepository = withdrawActivityRepository;
+            _appSettingsRepository = appSettingsRepository;
         }
 
-
+        /// <summary>
+        /// Get chapter details with clesson and classes
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         [HttpGet("{Id:int}")]
         [Produces(typeof(ChapterDTO))]
         public IActionResult GetChapter(int Id)
@@ -116,6 +129,12 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Get Chapter quiz questions with anwser options
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         [HttpGet("{Id:int}/quiz")]
         [Produces(typeof(List<ChapterQuestionDTO>))]
         public IActionResult GetQuestions(int Id)
@@ -143,6 +162,79 @@ namespace DohrniiBackoffice.Controllers
                     return NotFound(new ErrorResponse { Details = "Chapter not found!" });
                 }
                 return NotFound(new ErrorResponse { Details = "User not found!" });
+            }
+            catch (Exception ex)
+            {
+                _Logger.LogError(ex.Message);
+                return InternalServerError(new ErrorResponse { Details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Unlock chapter quiz with the required jelly set in the chapter detail
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("unlockquiz")]
+        [Produces(typeof(UserResp))]
+        public async Task<IActionResult> ConvertXPtoJelly([FromBody] UnlockChapterDTO dto)
+        {
+            try
+            {
+                var user = GetUser();
+                if (user != null)
+                {
+                    var chapter = _chapterRepository.FindBy(c=>c.Id == dto.ChapterId).FirstOrDefault();
+                    if (chapter != null)
+                    {
+                        if (user.TotalJelly >= chapter.RequiredJelly)
+                        {
+                            using (TransactionScope scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                            {
+                                var withdraw = new WithdrawActivity
+                                {
+                                    DateAdded = DateTime.UtcNow,
+                                    Dhn = 0,
+                                    Jelly = chapter.RequiredJelly,
+                                    UserId = user.Id
+                                };
+                                _withdrawActivityRepository.Add(withdraw);
+                                await _withdrawActivityRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                                var unluckActivity = new QuizUnlockActivity
+                                {
+                                    Jelly = chapter.RequiredJelly,
+                                    UserId = user.Id,
+                                    ChapterId = chapter.Id,
+                                    DateUnlocked = DateTime.UtcNow
+                                };
+                                _quizUnlockActivityRepository.Add(unluckActivity);
+                                await _quizUnlockActivityRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                                user.TotalJelly -= chapter.RequiredJelly;
+                                _userRepository.Edit(user);
+                                await _userRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                                scope.Complete();
+                            }
+                            var userResp = _mapper.Map<UserResp>(user);
+                            var settings = _appSettingsRepository.GetAll().FirstOrDefault();
+                            if(settings != null)
+                            {
+                                userResp.XpPerCryptojelly = settings.XpToJelly;
+                            }
+
+                            return Ok(userResp);
+                        }
+                        return Conflict(new ErrorResponse { Details = "You don't have enough XP for this converstion!" });
+
+                    }
+                    return NotFound(new ErrorResponse { Details = "No record found!" });
+                }
+                else
+                {
+                    return NotFound(new ErrorResponse { Details = "User not found!" });
+                }
             }
             catch (Exception ex)
             {

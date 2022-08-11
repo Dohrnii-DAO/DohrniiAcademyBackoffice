@@ -16,13 +16,20 @@ namespace DohrniiBackoffice.Controllers
         private readonly ITokenService _token;
         private readonly IEmailVerificationRepository _emailVerificationRepository;
         private readonly IMailHelper _mailHelper;
-        public AuthController(ITokenService token, IEmailVerificationRepository emailVerificationRepository, IMailHelper mailHelper)
+        private readonly IAppSettingsRepository _appSettingsRepository;
+        public AuthController(ITokenService token, IEmailVerificationRepository emailVerificationRepository, IMailHelper mailHelper, IAppSettingsRepository appSettingsRepository)
         {
             _token = token;
             _emailVerificationRepository = emailVerificationRepository;
             _mailHelper = mailHelper;
+            _appSettingsRepository = appSettingsRepository;
         }
 
+        /// <summary>
+        /// User login
+        /// </summary>
+        /// <param name="login"></param>
+        /// <returns></returns>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest login)
         {
@@ -38,7 +45,13 @@ namespace DohrniiBackoffice.Controllers
                         {
                             user.ProfileImage = $"{GetBasedUrl()}{AuthConstants.DefaultProfile}";
                         }
-                        return Ok(new LoginResp { AccessToken = rst.Token, ExpiringDate = DateTime.Now.AddDays(1), User = _mapper.Map<UserResp>(user) });
+                        var userResp = _mapper.Map<UserResp>(user);
+                        var settings = _appSettingsRepository.GetAll().FirstOrDefault();
+                        if (settings != null)
+                        {
+                            userResp.XpPerCryptojelly = settings.XpToJelly;
+                        }
+                        return Ok(new LoginResp { AccessToken = rst.Token, ExpiringDate = DateTime.Now.AddYears(1), User = userResp });
                     }
                     else
                     {
@@ -54,7 +67,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Send email verification code
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("email")]
         public async Task<IActionResult> EmailCode([FromBody] EmailCodeDTO dto)
         {
@@ -109,6 +126,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Confirm user registration
+        /// </summary>
+        /// <param name="register"></param>
+        /// <returns></returns>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest register)
         {
@@ -170,6 +192,11 @@ namespace DohrniiBackoffice.Controllers
 
         }
 
+        /// <summary>
+        /// Changer user password
+        /// </summary>
+        /// <param name="register"></param>
+        /// <returns></returns>
         [HttpPost("changepassword")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO register)
         {

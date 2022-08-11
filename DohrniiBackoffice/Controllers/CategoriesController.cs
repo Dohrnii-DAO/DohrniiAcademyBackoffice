@@ -27,6 +27,10 @@ namespace DohrniiBackoffice.Controllers
             _chapterRepository = chapterRepository;
         }
 
+        /// <summary>
+        /// Get list categories
+        /// </summary>
+        /// <returns></returns>
         [HttpGet()]
         [Produces(typeof(List<CategoryDTO>))]
         public IActionResult GetCategories()
@@ -44,6 +48,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Get list of chapters with it's list of lessons
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         [HttpGet("{Id:int}/chapters")]
         [Produces(typeof(List<ChapterDTO>))]
         public IActionResult GetChapter(int Id)
@@ -68,6 +77,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Get user progress based on category
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         [HttpGet("{Id:int}/progress")]
         [Produces(typeof(CategoryProgressDTO))]
         public IActionResult GetProgress(int Id)

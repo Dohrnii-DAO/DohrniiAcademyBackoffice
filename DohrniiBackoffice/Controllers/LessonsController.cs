@@ -46,6 +46,11 @@ namespace DohrniiBackoffice.Controllers
             _earningActivityRepository = earningActivityRepository;
         }
 
+        /// <summary>
+        /// Start lesson
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("start")]
         [Produces(typeof(StartResponseDTO))]
         public async Task<IActionResult> StartLesson([FromBody] StartDTO dto)
@@ -133,6 +138,11 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
+        /// <summary>
+        /// Complete lesson
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut("complete")]
         [Produces(typeof(CompleteResponseDTO))]
         public async Task<IActionResult> CompleteLesson([FromBody] CompleteDTO dto)
@@ -186,37 +196,37 @@ namespace DohrniiBackoffice.Controllers
             }
         }
 
-        [HttpGet("{Id:int}/progress")]
-        [Produces(typeof(CompleteResponseDTO))]
-        public IActionResult GetLessonProgress(int Id)
-        {
-            var user = GetUser();
-            if(user != null)
-            {
-                var lesson = _lessonRepository.FindBy(c => c.Id == Id).FirstOrDefault();
-                if (lesson != null)
-                {
-                    var lessonActivity = _lessonActivityRepository.FindBy(c => c.UserId == user.Id && c.LessonId == Id).FirstOrDefault();
-                    var resp = new CompleteResponseDTO();
-                    resp.IsCompleted = lessonActivity == null ? false : lessonActivity.IsCompleted;
-                    resp.Id = Id;
-                    resp.Name = lesson.Name;
-                    var earnings = _earningActivityRepository.FindBy(c => c.UserId == user.Id && c.ClassId == Id).ToList();
-                    resp.TotalXpEarned = earnings.Sum(c => c.Xp);
-                    resp.TotalJellyEarned = earnings.Sum(c => c.Jelly);
-                    resp.TotalDhnEarned = earnings.Sum(c => c.Dhn);
+        //[HttpGet("{Id:int}/progress")]
+        //[Produces(typeof(CompleteResponseDTO))]
+        //public IActionResult GetLessonProgress(int Id)
+        //{
+        //    var user = GetUser();
+        //    if(user != null)
+        //    {
+        //        var lesson = _lessonRepository.FindBy(c => c.Id == Id).FirstOrDefault();
+        //        if (lesson != null)
+        //        {
+        //            var lessonActivity = _lessonActivityRepository.FindBy(c => c.UserId == user.Id && c.LessonId == Id).FirstOrDefault();
+        //            var resp = new CompleteResponseDTO();
+        //            resp.IsCompleted = lessonActivity == null ? false : lessonActivity.IsCompleted;
+        //            resp.Id = Id;
+        //            resp.Name = lesson.Name;
+        //            var earnings = _earningActivityRepository.FindBy(c => c.UserId == user.Id && c.ClassId == Id).ToList();
+        //            resp.TotalXpEarned = earnings.Sum(c => c.Xp);
+        //            resp.TotalJellyEarned = earnings.Sum(c => c.Jelly);
+        //            resp.TotalDhnEarned = earnings.Sum(c => c.Dhn);
 
-                    //var totalClasses = _lessonClassRepository.FindBy(c => c.LessonId == classActivity.LessonId).ToList();
-                    //var completedClasses = _lessonClassActivityRepository.FindBy(c => c.UserId == user.Id && c.IsCompleted == true && c.LessonId == classActivity.LessonId).ToList();
-                    //var percentage = (completedClasses.Count / totalClasses.Count) * 100.0;
-                    //resp.PercentageComplete = Math.Round(percentage, MidpointRounding.AwayFromZero);
+        //            //var totalClasses = _lessonClassRepository.FindBy(c => c.LessonId == classActivity.LessonId).ToList();
+        //            //var completedClasses = _lessonClassActivityRepository.FindBy(c => c.UserId == user.Id && c.IsCompleted == true && c.LessonId == classActivity.LessonId).ToList();
+        //            //var percentage = (completedClasses.Count / totalClasses.Count) * 100.0;
+        //            //resp.PercentageComplete = Math.Round(percentage, MidpointRounding.AwayFromZero);
 
 
-                    return Ok(resp);
-                }
-                return NotFound(new ErrorResponse { Details = "Record not found!" });
-            }
-            return NotFound(new ErrorResponse { Details = "We can't find your account!" });
-        }
+        //            return Ok(resp);
+        //        }
+        //        return NotFound(new ErrorResponse { Details = "Record not found!" });
+        //    }
+        //    return NotFound(new ErrorResponse { Details = "We can't find your account!" });
+        //}
     }
 }

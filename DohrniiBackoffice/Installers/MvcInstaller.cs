@@ -15,6 +15,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 
 namespace DohrniiBackoffice.Installers
@@ -118,22 +119,26 @@ namespace DohrniiBackoffice.Installers
 
                 x.AddSecurityRequirement(new OpenApiSecurityRequirement()
                 {
-                {
-                    new OpenApiSecurityScheme
                     {
-                    Reference = new OpenApiReference
+                        new OpenApiSecurityScheme
                         {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                        },
-                        Scheme = "oauth2",
-                        Name = "Bearer",
-                        In = ParameterLocation.Header,
+                        Reference = new OpenApiReference
+                            {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
 
-                    },
-                    new List<string>()
+                        },
+                        new List<string>()
                     }
                 });
+
+                var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                x.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
             });
             #endregion
 
