@@ -82,6 +82,7 @@ namespace DohrniiBackoffice.Controllers
                         chapter.IsQuizUnlocked = mChapter.QuizUnlockActivities.FirstOrDefault(c => c.UserId == user.Id) != null;
                         chapter.IsStarted = mChapter.ChapterActivities.FirstOrDefault(c => c.UserId == user.Id) != null;
                         chapter.IsCompleted = mChapter.ChapterActivities.FirstOrDefault(c => c.IsCompleted == true && c.UserId == user.Id) != null;
+                        chapter.IsQuizDone = mChapter.QuizAttempts.FirstOrDefault(c => c.UserId == user.Id) != null;
                         
                         chapter.Lessons = new List<LessonDTO>();
                         foreach (var item in mChapter.Lessons)
@@ -153,7 +154,7 @@ namespace DohrniiBackoffice.Controllers
                         foreach (var item in options)
                         {
                             item.Options = _mapper.Map<List<ClassQuestionOptionDTO>>(_classQuestionAnswerRepository.FindBy(c => c.ClassQuestionId == item.Id).ToList());
-                            item.Attempts = _mapper.Map<List<ClassQuestionAttemptDTO>>(_quizAttemptRepository.FindBy(c => c.QuestionId == item.Id && c.UserId == user.Id).ToList());
+                            item.Attempts = _mapper.Map<List<ClassQuestionAttemptDTO>>(_quizAttemptRepository.FindBy(c => c.QuestionId == item.Id && c.UserId == user.Id && c.ChapterId == Id).ToList());
                             item.IsAttempted = item.Attempts.Count > 0;
                         }
 
@@ -230,6 +231,111 @@ namespace DohrniiBackoffice.Controllers
 
                     }
                     return NotFound(new ErrorResponse { Details = "No record found!" });
+                }
+                else
+                {
+                    return NotFound(new ErrorResponse { Details = "User not found!" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _Logger.LogError(ex.Message);
+                return InternalServerError(new ErrorResponse { Details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Attempt a quiz question
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("quizattempt")]
+        [Produces(typeof(QuestionAttemptRespDTO))]
+        public async Task<IActionResult> QuestionAttempt([FromBody] QuizAttemptDTO dto)
+        {
+            try
+            {
+                var user = GetUser();
+                if (user != null)
+                {
+                    var chapter = _chapterRepository.FindBy(c => c.Id == dto.ChapterId).FirstOrDefault();
+                    if (chapter != null)
+                    {
+                        var attempt = new QuizAttempt
+                        {
+                            DateAttempt = DateTime.UtcNow,
+                            QuestionId = dto.QuestionId,
+                            SelectedAnswerId = dto.SelectedAnswerId,
+                            UserId = user.Id,
+                            Xpcollected = dto.Xpcollected,
+                            IsCorrect = dto.IsCorrect,
+                            ChapterId = dto.ChapterId
+                        };
+                        _quizAttemptRepository.Add(attempt);
+                        await _quizAttemptRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                        return Ok(new QuestionAttemptRespDTO { IsCorrect = true, QuestionId = dto.QuestionId, AnwserId = dto.SelectedAnswerId });
+                    }
+                    return NotFound(new ErrorResponse { Details = "Record not found!" });
+                }
+                else
+                {
+                    return NotFound(new ErrorResponse { Details = "We can't find your account!" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _Logger.LogError(ex.Message);
+                return InternalServerError(new ErrorResponse { Details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Award user dhn
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("awarddhn")]
+        [Produces(typeof(UserResp))]
+        public async Task<IActionResult> AwardDhn([FromBody] AwardDhnDTO dto)
+        {
+            try
+            {
+                var user = GetUser();
+                if (user != null)
+                {
+                    var chapter = _chapterRepository.FindBy(c=>c.Id == dto.ChapterId).FirstOrDefault();
+                    if (chapter != null)
+                    {
+                        using (TransactionScope scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                        {
+                            var earn = new EarningActivity
+                            {
+                                DateAdded = DateTime.UtcNow,
+                                Dhn = dto.AwardedDhn,
+                                UserId = user.Id,
+                                ChapterId = chapter.Id,
+                                CategoryId = chapter.CategoryId
+                            };
+                            _earningActivityRepository.Add(earn);
+                            await _earningActivityRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                            user.TotalDhn += dto.AwardedDhn;
+                            _userRepository.Edit(user);
+                            await _userRepository.Save(user.Email, _accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString());
+
+                            scope.Complete();
+                        }
+                        var userResp = _mapper.Map<UserResp>(user);
+                        var settings = _appSettingsRepository.GetAll().FirstOrDefault();
+                        if (settings != null)
+                        {
+                            userResp.XpPerCryptojelly = settings.XpToJelly;
+                        }
+                        return Ok(userResp);
+
+                    }
+                    return NotFound(new ErrorResponse { Details = "Record not found!" });
                 }
                 else
                 {

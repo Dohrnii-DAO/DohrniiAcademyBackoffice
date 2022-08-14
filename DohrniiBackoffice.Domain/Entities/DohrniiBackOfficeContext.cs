@@ -262,6 +262,12 @@ namespace DohrniiBackoffice.Domain.Entities
 
             modelBuilder.Entity<QuizAttempt>(entity =>
             {
+                entity.HasOne(d => d.Chapter)
+                    .WithMany(p => p.QuizAttempts)
+                    .HasForeignKey(d => d.ChapterId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_QuizAttempt_Chapter");
+
                 entity.HasOne(d => d.Question)
                     .WithMany(p => p.QuizAttempts)
                     .HasForeignKey(d => d.QuestionId)

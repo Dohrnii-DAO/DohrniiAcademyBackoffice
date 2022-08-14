@@ -15,11 +15,15 @@ namespace DohrniiBackoffice.Domain.Entities
         public int SelectedAnswerId { get; set; }
         public int UserId { get; set; }
         public bool IsCorrect { get; set; }
+        public int ChapterId { get; set; }
         [Column("XPCollected")]
         public int Xpcollected { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime? DateAttempt { get; set; }
 
+        [ForeignKey("ChapterId")]
+        [InverseProperty("QuizAttempts")]
+        public virtual Chapter Chapter { get; set; } = null!;
         [ForeignKey("QuestionId")]
         [InverseProperty("QuizAttempts")]
         public virtual ClassQuestion Question { get; set; } = null!;

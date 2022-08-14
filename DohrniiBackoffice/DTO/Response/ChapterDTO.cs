@@ -19,6 +19,7 @@
         public bool IsQuizUnlocked { get; set; }
         public bool IsStarted { get; set; }
         public bool IsCompleted { get; set; }
+        public bool IsQuizDone { get; set; }
         public List<LessonDTO> Lessons { get; set; }
     }
 }
