@@ -227,7 +227,7 @@ namespace DohrniiBackoffice.Controllers
 
                             return Ok(userResp);
                         }
-                        return Conflict(new ErrorResponse { Details = "You don't have enough XP for this converstion!" });
+                        return Conflict(new ErrorResponse { Details = "You don't have enough Jelly to unlock this quiz!" });
 
                     }
                     return NotFound(new ErrorResponse { Details = "No record found!" });
